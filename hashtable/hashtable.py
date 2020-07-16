@@ -6,6 +6,7 @@ class HashTableEntry:
         self.key = key
         self.value = value
         self.next = None
+        self.head = None
 
 
 # Hash table can't have fewer than this many slots
@@ -16,12 +17,14 @@ class HashTable:
     """
     A hash table that with `capacity` buckets
     that accepts string keys
-
     Implement this.
     """
 
     def __init__(self, capacity):
         # Your code here
+        self.capacity = capacity
+        self.storage = [None] * capacity  #[SLOTS]
+        self.counter = 0
 
 
     def get_num_slots(self):
@@ -29,40 +32,40 @@ class HashTable:
         Return the length of the list you're using to hold the hash
         table data. (Not the number of items stored in the hash table,
         but the number of slots in the main list.)
-
         One of the tests relies on this.
-
         Implement this.
         """
         # Your code here
+        return self.capacity
 
 
     def get_load_factor(self):
         """
         Return the load factor for this hash table.
-
         Implement this.
         """
         # Your code here
+        return self.counter/self.capacity
 
 
     def fnv1(self, key):
         """
         FNV-1 Hash, 64-bit
-
         Implement this, and/or DJB2.
         """
 
         # Your code here
 
-
     def djb2(self, key):
         """
         DJB2 hash, 32-bit
-
         Implement this, and/or FNV-1.
         """
         # Your code here
+        hash = 5381
+        for byte in key:
+            hash = ((hash << 5) + hash) + ord(byte)
+        return hash
 
 
     def hash_index(self, key):
@@ -76,46 +79,106 @@ class HashTable:
     def put(self, key, value):
         """
         Store the value with the given key.
-
         Hash collisions should be handled with Linked List Chaining.
-
         Implement this.
         """
         # Your code here
+
+        # TODO need to resize if load factor is > 0.7
+        
+        # hash key to find index
+        index = self.hash_index(key)
+        
+        # hash table entry
+        hashtable = HashTableEntry(key,value)
+        
+        # starting node in index 
+        node = self.storage[index]
+        
+        # if index is filled add new to the start and assign old to next
+        if node is not None:
+            self.storage[index] = hashtable
+            self.storage[index].next = node
+            
+        # else add directly to storage
+        else:
+            self.storage[index] = hashtable
+            self.counter += 1
+            
+        # if self.get_load_factor() > 0.7:
+        #     self.resize(self.counter * 2)
 
 
     def delete(self, key):
         """
         Remove the value stored with the given key.
-
         Print a warning if the key is not found.
-
         Implement this.
         """
         # Your code here
+        index = self.hash_index(key)
+        node = self.storage[index]
+        prev = None # store prev chain
+        
+        # if node is found in the start assign next to start
+        if node.key == key:
+            self.storage[index] = node.next
+            return
+        
+        while node !=None:
+            if node.key == key:
+                prev.next = node.next
+                self.storage[index].next = None
+                return
+            prev = node
+            node = node.next
+        
+        return
 
 
     def get(self, key):
         """
         Retrieve the value stored with the given key.
-
         Returns None if the key is not found.
-
         Implement this.
         """
         # Your code here
+        index = self.hash_index(key)
+        node = self.storage[index]
+        
+        #iterate and check chains
+        while node is not None:
+            if node.key == key:
+                return node.value
+            else:
+                node = node.next
+
 
 
     def resize(self, new_capacity):
         """
         Changes the capacity of the hash table and
         rehashes all key/value pairs.
-
         Implement this.
         """
         # Your code here
 
+        # old keys
+        old = self.storage
+        #set capacity to new capacity
+        self.capacity = new_capacity
+        #create storage with new set capacity
+        self.storage = [None] * new_capacity
 
+        #need to loop through data and add to new storage
+        for keys in old:
+            if keys:
+                current = keys
+            while current:
+                self.put(current.key, current.value)
+                current = current.next
+
+        
 
 if __name__ == "__main__":
     ht = HashTable(8)
